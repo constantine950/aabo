@@ -118,15 +118,3 @@ A React + Vite UI for operators to:
 - Manually block / unblock entities
 
 ---
-
-## Technical Decisions
-
-| Decision             | Choice                   | Reason                                               |
-| -------------------- | ------------------------ | ---------------------------------------------------- |
-| Language             | TypeScript               | Type safety across middleware, models, and services  |
-| Runtime              | Node.js + Express        | Familiar, fast enough, easy middleware model         |
-| Counter store        | Redis                    | Sub-millisecond reads/writes, native TTL support     |
-| Persistence          | PostgreSQL               | Reliable store for logs, keys, and config            |
-| Rate limit algorithm | Sliding window (primary) | More accurate than fixed window at window boundaries |
-
----
