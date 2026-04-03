@@ -9,11 +9,12 @@ export const db = new Pool({
 });
 
 db.on("error", (err) => {
-  console.error("[db] unexpected error on idle client:", err);
+  console.error("[database] unexpected error on idle client:", err);
+  process.exit(-1);
 });
 
 export const connectDb = async (): Promise<void> => {
   const client = await db.connect();
   client.release();
-  console.log("[db] connected");
+  console.log("[database] connected successfully");
 };
