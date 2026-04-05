@@ -1,6 +1,5 @@
 export { fixedWindow } from "./fixedWindow";
 export { slidingWindow } from "./slidingWindow";
+export { tokenBucket } from "./tokenBucket";
 export type { LimiterOptions, LimiterResult } from "./fixedWindow";
-
-// added day by day:
-// export { tokenBucket } from './tokenBucket';
+export type { TokenBucketOptions } from "./tokenBucket";
