@@ -1,4 +1,4 @@
-import { redis } from "../config/redis";
+import { swAdd, swEvict, swCount, swOldest } from "../services/redisService";
 import { LimiterOptions, LimiterResult } from "./fixedWindow";
 
 export const slidingWindow = async ({
@@ -11,18 +11,11 @@ export const slidingWindow = async ({
   const windowStart = now - windowMs;
   const redisKey = `sw:${key}`;
 
-  // Remove entries outside the current window
-  await redis.zRemRangeByScore(redisKey, "-inf", windowStart);
-
-  // Count remaining entries in window
-  const count = await redis.zCard(redisKey);
+  await swEvict(redisKey, windowStart);
+  const count = await swCount(redisKey);
 
   if (count >= maxRequests) {
-    // Get the oldest entry to calculate reset time
-    const oldest = await redis.zRange(redisKey, 0, 0, { BY: "SCORE" });
-    const oldestScore = oldest.length
-      ? await redis.zScore(redisKey, oldest[0])
-      : now;
+    const oldestScore = await swOldest(redisKey);
     const resetInSeconds = Math.ceil(
       ((oldestScore ?? now) + windowMs - now) / 1000,
     );
@@ -36,14 +29,8 @@ export const slidingWindow = async ({
     };
   }
 
-  // Add current request as a scored entry
-  await redis.zAdd(redisKey, {
-    score: now,
-    value: `${now}-${Math.random().toString(36).slice(2)}`,
-  });
-
-  // Keep the key alive for the duration of the window
-  await redis.expire(redisKey, windowSeconds);
+  const member = `${now}-${Math.random().toString(36).slice(2)}`;
+  await swAdd(redisKey, now, member, windowSeconds);
 
   return {
     allowed: true,

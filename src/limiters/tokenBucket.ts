@@ -1,4 +1,4 @@
-import { redis } from "../config/redis";
+import { tbGet, tbSet } from "../services/redisService";
 import { LimiterResult } from "./fixedWindow";
 
 export interface TokenBucketOptions {
@@ -14,25 +14,21 @@ export const tokenBucket = async ({
 }: TokenBucketOptions): Promise<LimiterResult> => {
   const redisKey = `tb:${key}`;
   const now = Date.now();
+  const ttl = Math.ceil(capacity / refillRate) + 60;
 
-  const data = await redis.hGetAll(redisKey);
+  const stored = await tbGet(redisKey);
 
-  const lastRefill = data.lastRefill ? parseInt(data.lastRefill) : now;
+  const lastRefill = stored?.lastRefill ?? now;
   const elapsed = (now - lastRefill) / 1000;
-
-  let tokens = data.tokens ? parseFloat(data.tokens) : capacity;
-  tokens = Math.min(capacity, tokens + elapsed * refillRate);
+  let tokens = Math.min(
+    capacity,
+    (stored?.tokens ?? capacity) + elapsed * refillRate,
+  );
 
   const resetInSeconds = tokens < 1 ? Math.ceil((1 - tokens) / refillRate) : 0;
 
   if (tokens < 1) {
-    // persist the refilled (but still insufficient) token count
-    await redis.hSet(redisKey, {
-      tokens: tokens.toString(),
-      lastRefill: now.toString(),
-    });
-    await redis.expire(redisKey, Math.ceil(capacity / refillRate) + 60);
-
+    await tbSet(redisKey, tokens, now, ttl);
     return {
       allowed: false,
       count: Math.floor(capacity - tokens),
@@ -43,12 +39,7 @@ export const tokenBucket = async ({
   }
 
   tokens -= 1;
-
-  await redis.hSet(redisKey, {
-    tokens: tokens.toString(),
-    lastRefill: now.toString(),
-  });
-  await redis.expire(redisKey, Math.ceil(capacity / refillRate) + 60);
+  await tbSet(redisKey, tokens, now, ttl);
 
   return {
     allowed: true,

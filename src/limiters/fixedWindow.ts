@@ -1,4 +1,4 @@
-import { redis } from "../config/redis";
+import { fwIncr } from "../services/redisService";
 
 export interface LimiterOptions {
   key: string;
@@ -22,11 +22,7 @@ export const fixedWindow = async ({
   const bucket = Math.floor(Date.now() / (windowSeconds * 1000));
   const redisKey = `fw:${key}:${bucket}`;
 
-  const count = await redis.incr(redisKey);
-
-  if (count === 1) {
-    await redis.expire(redisKey, windowSeconds);
-  }
+  const count = await fwIncr(redisKey, windowSeconds);
 
   const resetInSeconds =
     windowSeconds - (Math.floor(Date.now() / 1000) % windowSeconds);
