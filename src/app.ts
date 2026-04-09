@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import { authenticate } from "./middleware/auth";
 import { logger } from "./middleware/logger";
 import { rateLimiter } from "./middleware/rateLimiter";
+import { abuseDetector } from "./middleware/abuseDetector";
 import { errorHandler } from "./middleware/errorHandler";
 import router from "./routes";
 
@@ -23,6 +24,7 @@ app.use(
     maxRequests: 100,
     windowSeconds: 60,
   }),
+  abuseDetector,
   router,
 );
 
