@@ -2,6 +2,7 @@ import { block, isBlocked, unblock } from "../services/redisService";
 import { BlockedEntityModel } from "../models/BlockedEntity";
 import { AbuseRuleName } from "../types";
 import { getRuleByName } from "./rules";
+import { sendAlert } from "./alerts";
 
 export type EntityType = "ip" | "key" | "user";
 
@@ -16,16 +17,23 @@ export const blockEntity = async (
   const reason = rule?.description ?? ruleName;
   const expiresAt = new Date(Date.now() + ttl * 1000);
 
-  // Write to Redis for fast lookup on every request
   await block(type, value, reason, ttl);
 
-  // Write to Postgres for audit trail
   await BlockedEntityModel.upsert({
     entity_type: type,
     entity_value: value,
     reason,
     blocked_by: blockedBy,
     expires_at: expiresAt,
+  });
+
+  sendAlert({
+    rule: ruleName,
+    entity: value,
+    entityType: type,
+    reason,
+    blockedAt: new Date(),
+    expiresAt,
   });
 };
 
