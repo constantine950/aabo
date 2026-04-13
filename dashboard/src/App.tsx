@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { setApiKey, getApiKey } from "./api";
 
 const ApiKeysPanel = lazy(() => import("./components/ApiKeysPanel"));
+const LogsPanel = lazy(() => import("./components/LogsPanel"));
 
 type Tab = "metrics" | "keys" | "logs" | "blocks";
 const tabs: Tab[] = ["metrics", "keys", "logs", "blocks"];
@@ -67,10 +68,10 @@ export default function App() {
       <main style={s.main}>
         <Suspense fallback={<p style={{ color: "#555" }}>Loading...</p>}>
           {tab === "keys" && <ApiKeysPanel />}
+          {tab === "logs" && <LogsPanel />}
           {tab === "metrics" && (
             <p style={{ color: "#555" }}>Metrics — Day 25</p>
           )}
-          {tab === "logs" && <p style={{ color: "#555" }}>Logs — Day 23</p>}
           {tab === "blocks" && <p style={{ color: "#555" }}>Blocks — Day 24</p>}
         </Suspense>
       </main>
