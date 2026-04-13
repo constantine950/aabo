@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { setApiKey, getApiKey } from "./api";
 
-type Tab = "metrics" | "keys" | "logs" | "blocks";
+const ApiKeysPanel = lazy(() => import("./components/ApiKeysPanel"));
 
+type Tab = "metrics" | "keys" | "logs" | "blocks";
 const tabs: Tab[] = ["metrics", "keys", "logs", "blocks"];
 
 export default function App() {
   const [key, setKey] = useState(getApiKey());
   const [authed, setAuthed] = useState(!!getApiKey());
-  const [tab, setTab] = useState<Tab>("metrics");
+  const [tab, setTab] = useState<Tab>("keys");
   const [input, setInput] = useState("");
 
   const handleAuth = () => {
@@ -19,19 +20,19 @@ export default function App() {
 
   if (!authed || !key) {
     return (
-      <div style={styles.center}>
-        <div style={styles.card}>
-          <h2 style={styles.title}>Ààbò</h2>
-          <p style={styles.sub}>Enter your API key to continue</p>
+      <div style={s.center}>
+        <div style={s.card}>
+          <h2 style={s.title}>Ààbò</h2>
+          <p style={s.sub}>Enter your API key to continue</p>
           <input
-            style={styles.input}
+            style={s.input}
             type="text"
             placeholder="aabo_..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAuth()}
           />
-          <button style={styles.btn} onClick={handleAuth}>
+          <button style={s.btn} onClick={handleAuth}>
             Continue
           </button>
         </div>
@@ -40,20 +41,20 @@ export default function App() {
   }
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.logo}>Ààbò</div>
+    <div style={s.shell}>
+      <aside style={s.sidebar}>
+        <div style={s.logo}>Ààbò</div>
         {tabs.map((t) => (
           <button
             key={t}
-            style={{ ...styles.navBtn, ...(tab === t ? styles.navActive : {}) }}
+            style={{ ...s.navBtn, ...(tab === t ? s.navActive : {}) }}
             onClick={() => setTab(t)}
           >
             {t}
           </button>
         ))}
         <button
-          style={{ ...styles.navBtn, marginTop: "auto" }}
+          style={{ ...s.navBtn, marginTop: "auto" }}
           onClick={() => {
             setAuthed(false);
             setApiKey("");
@@ -63,15 +64,21 @@ export default function App() {
           sign out
         </button>
       </aside>
-      <main style={styles.main}>
-        {/* panels added day by day */}
-        <p style={{ color: "#888" }}>{tab} panel — coming in Days 22–25</p>
+      <main style={s.main}>
+        <Suspense fallback={<p style={{ color: "#555" }}>Loading...</p>}>
+          {tab === "keys" && <ApiKeysPanel />}
+          {tab === "metrics" && (
+            <p style={{ color: "#555" }}>Metrics — Day 25</p>
+          )}
+          {tab === "logs" && <p style={{ color: "#555" }}>Logs — Day 23</p>}
+          {tab === "blocks" && <p style={{ color: "#555" }}>Blocks — Day 24</p>}
+        </Suspense>
       </main>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   center: {
     display: "flex",
     alignItems: "center",
