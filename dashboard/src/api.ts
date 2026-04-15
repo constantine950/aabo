@@ -31,7 +31,7 @@ const request = async <T>(
   return res.json() as Promise<T>;
 };
 
-// ── API helpers ───────────────────────────────────────────────
+// API helpers
 
 export const fetchMetrics = () =>
   request<{
