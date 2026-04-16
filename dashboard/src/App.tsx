@@ -4,6 +4,7 @@ import { setApiKey, getApiKey } from "./api";
 const ApiKeysPanel = lazy(() => import("./components/ApiKeysPanel"));
 const LogsPanel = lazy(() => import("./components/LogsPanel"));
 const BlocksPanel = lazy(() => import("./components/BlocksPanel"));
+const MetricsChart = lazy(() => import("./components/MetricsChart"));
 
 type Tab = "metrics" | "keys" | "logs" | "blocks";
 const tabs: Tab[] = ["metrics", "keys", "logs", "blocks"];
@@ -11,7 +12,7 @@ const tabs: Tab[] = ["metrics", "keys", "logs", "blocks"];
 export default function App() {
   const [key, setKey] = useState(getApiKey());
   const [authed, setAuthed] = useState(!!getApiKey());
-  const [tab, setTab] = useState<Tab>("keys");
+  const [tab, setTab] = useState<Tab>("metrics");
   const [input, setInput] = useState("");
 
   const handleAuth = () => {
@@ -68,12 +69,10 @@ export default function App() {
       </aside>
       <main style={s.main}>
         <Suspense fallback={<p style={{ color: "#555" }}>Loading...</p>}>
+          {tab === "metrics" && <MetricsChart />}
           {tab === "keys" && <ApiKeysPanel />}
           {tab === "logs" && <LogsPanel />}
           {tab === "blocks" && <BlocksPanel />}
-          {tab === "metrics" && (
-            <p style={{ color: "#555" }}>Metrics — Day 25</p>
-          )}
         </Suspense>
       </main>
     </div>
