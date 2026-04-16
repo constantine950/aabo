@@ -7,6 +7,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "seed": "ts-node-dev --transpile-only db/seed.ts",
+    "simulate:traffic": "ts-node-dev --transpile-only scripts/simulateTraffic.ts",
+    "simulate:attack": "ts-node-dev --transpile-only scripts/simulateAttack.ts",
     "test": "jest"
   },
   "dependencies": {
