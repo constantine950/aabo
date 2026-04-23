@@ -1,34 +1,41 @@
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types";
 import { detect } from "../detection/engine";
-import { checkBlocked, blockEntity } from "../detection/blocker";
+import { blockEntity } from "../detection/blocker";
+import { checkBothBlocked } from "../services/redisService";
+
+// Routes to skip abuse detection on — internal/health endpoints
+const SKIP_ROUTES = new Set(["/health", "/metrics", "/logs"]);
 
 export const abuseDetector = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  // Skip detection for internal routes
+  if (SKIP_ROUTES.has(req.path)) {
+    next();
+    return;
+  }
+
   const ip = req.ip ?? "unknown";
   const apiKeyId = req.apiKey?.id;
 
   try {
-    // 1. Check if IP is already blocked
-    const ipBlock = await checkBlocked("ip", ip);
+    // Check IP + key blocks in a single Redis pipeline round trip
+    const { ipBlock, keyBlock } = await checkBothBlocked(ip, apiKeyId);
+
     if (ipBlock) {
       res.status(403).json({ error: "Blocked", reason: ipBlock });
       return;
     }
 
-    // 2. Check if API key is already blocked
-    if (apiKeyId) {
-      const keyBlock = await checkBlocked("key", apiKeyId);
-      if (keyBlock) {
-        res.status(403).json({ error: "Blocked", reason: keyBlock });
-        return;
-      }
+    if (keyBlock) {
+      res.status(403).json({ error: "Blocked", reason: keyBlock });
+      return;
     }
 
-    // 3. Run detection engine on current request
+    // Run detection engine
     const result = await detect({
       ip,
       apiKeyId,
@@ -38,11 +45,8 @@ export const abuseDetector = async (
     });
 
     if (result.flagged && result.rule) {
-      // Block both the IP and the API key if present
       await blockEntity("ip", ip, result.rule);
-      if (apiKeyId) {
-        await blockEntity("key", apiKeyId, result.rule);
-      }
+      if (apiKeyId) await blockEntity("key", apiKeyId, result.rule);
 
       res.status(403).json({
         error: "Blocked due to suspicious activity",
@@ -53,7 +57,6 @@ export const abuseDetector = async (
 
     next();
   } catch (err) {
-    // Fail open — detection errors should never block legitimate traffic
     console.error("[abuseDetector] error, failing open:", err);
     next();
   }

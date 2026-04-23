@@ -1,6 +1,7 @@
 import { redis } from "../config/redis";
 
-//Generic helpers
+// Generic helpers
+
 export const get = async (key: string): Promise<string | null> => {
   return redis.get(key);
 };
@@ -25,19 +26,21 @@ export const exists = async (key: string): Promise<boolean> => {
   return (await redis.exists(key)) === 1;
 };
 
-//Fixed window
+// Fixed window
+
 export const fwIncr = async (
   key: string,
   ttlSeconds: number,
 ): Promise<number> => {
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, ttlSeconds);
-  }
-  return count;
+  // Pipeline INCR + EXPIRE into a single round trip
+  const pipeline = redis.multi();
+  pipeline.incr(key);
+  pipeline.expire(key, ttlSeconds);
+  const results = await pipeline.exec();
+  return results[0] as number;
 };
 
-//Sliding window
+// Sliding window
 
 export const swAdd = async (
   key: string,
@@ -45,8 +48,10 @@ export const swAdd = async (
   member: string,
   ttlSeconds: number,
 ): Promise<void> => {
-  await redis.zAdd(key, { score, value: member });
-  await redis.expire(key, ttlSeconds);
+  const pipeline = redis.multi();
+  pipeline.zAdd(key, { score, value: member });
+  pipeline.expire(key, ttlSeconds);
+  await pipeline.exec();
 };
 
 export const swEvict = async (
@@ -66,7 +71,8 @@ export const swOldest = async (key: string): Promise<number | null> => {
   return redis.zScore(key, oldest[0]);
 };
 
-//Token bucket
+// Token bucket
+
 export const tbGet = async (
   key: string,
 ): Promise<{ tokens: number; lastRefill: number } | null> => {
@@ -84,14 +90,17 @@ export const tbSet = async (
   lastRefill: number,
   ttlSeconds: number,
 ): Promise<void> => {
-  await redis.hSet(key, {
+  const pipeline = redis.multi();
+  pipeline.hSet(key, {
     tokens: tokens.toString(),
     lastRefill: lastRefill.toString(),
   });
-  await redis.expire(key, ttlSeconds);
+  pipeline.expire(key, ttlSeconds);
+  await pipeline.exec();
 };
 
-//Block helpers
+// Block helpers
+
 export const block = async (
   type: string,
   value: string,
@@ -112,7 +121,25 @@ export const unblock = async (type: string, value: string): Promise<void> => {
   await redis.del(`block:${type}:${value}`);
 };
 
+// Block check pipeline — single round trip for IP + key
+
+export const checkBothBlocked = async (
+  ip: string,
+  apiKeyId?: string,
+): Promise<{ ipBlock: string | null; keyBlock: string | null }> => {
+  const pipeline = redis.multi();
+  pipeline.get(`block:ip:${ip}`);
+  if (apiKeyId) pipeline.get(`block:key:${apiKeyId}`);
+  const results = await pipeline.exec();
+
+  return {
+    ipBlock: results[0] as string | null,
+    keyBlock: apiKeyId ? (results[1] as string | null) : null,
+  };
+};
+
 //Memory info
+
 export const memoryUsage = async (): Promise<string> => {
   const info = await redis.info("memory");
   const match = info.match(/used_memory_human:(\S+)/);
