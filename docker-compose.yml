@@ -1,4 +1,20 @@
 services:
+  app:
+    build: .
+    container_name: aabo_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/aabo
+      REDIS_URL: redis://redis:6379
+
   postgres:
     image: postgres:16-alpine
     container_name: aabo_postgres
@@ -8,10 +24,15 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: aabo
     ports:
-      - "5435:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d aabo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
