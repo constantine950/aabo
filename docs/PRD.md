@@ -1,5 +1,3 @@
-# Ààbò — Product Requirements Document
-
 ## Overview
 
 Ààbò is a rate-limiting and abuse detection API that protects backend services
@@ -32,13 +30,6 @@ is actually being blocked or why.
 4. Be easy to integrate — drop-in middleware for any Node.js/Express service
 
 ---
-
-## Non-Goals (v1)
-
-- Not a full API gateway (no routing, auth delegation, or load balancing)
-- No GraphQL-specific support
-- No multi-region Redis clustering
-- Dashboard is a stretch goal — CLI and API endpoints are the primary interface
 
 ---
 
@@ -108,7 +99,7 @@ Expose real-time counters:
 
 ---
 
-## Stretch Goal — Admin Dashboard
+## Admin Dashboard
 
 A React + Vite UI for operators to:
 

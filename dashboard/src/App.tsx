@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { setApiKey, getApiKey } from "./api";
+import Landing from "./Landing";
 
 const ApiKeysPanel = lazy(() => import("./components/ApiKeysPanel"));
 const LogsPanel = lazy(() => import("./components/LogsPanel"));
@@ -14,14 +15,15 @@ export default function App() {
   const [authed, setAuthed] = useState(!!getApiKey());
   const [tab, setTab] = useState<Tab>("metrics");
   const [input, setInput] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
 
-  const handleAuth = () => {
-    setApiKey(input.trim());
-    setKey(input.trim());
-    setAuthed(true);
-  };
+  // Show landing page if not authed and not trying to login
+  if (!authed && !showLogin) {
+    return <Landing onGetStarted={() => setShowLogin(true)} />;
+  }
 
-  if (!authed || !key) {
+  // Login screen
+  if (!authed) {
     return (
       <div style={s.center}>
         <div style={s.card}>
@@ -34,13 +36,34 @@ export default function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAuth()}
+            autoFocus
           />
           <button style={s.btn} onClick={handleAuth}>
             Continue
           </button>
+          <button
+            style={{
+              ...s.btn,
+              background: "none",
+              border: "1px solid #2a2a2a",
+              color: "#888",
+              marginTop: 4,
+            }}
+            onClick={() => setShowLogin(false)}
+          >
+            ← Back
+          </button>
         </div>
       </div>
     );
+  }
+
+  function handleAuth() {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    setApiKey(trimmed);
+    setKey(trimmed);
+    setAuthed(true);
   }
 
   return (
@@ -62,6 +85,7 @@ export default function App() {
             setAuthed(false);
             setApiKey("");
             setKey("");
+            setShowLogin(false);
           }}
         >
           sign out

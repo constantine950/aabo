@@ -1,14 +1,5 @@
 import { AbuseRule } from "../types";
 
-// Abuse pattern definitions
-//
-// threshold     — number of occurrences that triggers the rule
-// windowSeconds — time window to count occurrences within
-// blockDuration — how long to block the entity if the rule fires
-//
-// All values are conservative defaults. Operators can tune these
-// per deployment by modifying this file or exposing a config API.
-
 export const rules: AbuseRule[] = [
   {
     name: "too_many_requests",
@@ -16,7 +7,7 @@ export const rules: AbuseRule[] = [
       "Client exceeds a very high request volume in a short window — likely a script or bot.",
     threshold: 200,
     windowSeconds: 60,
-    blockDurationSeconds: 300,
+    blockDurationSeconds: 3600,
   },
   {
     name: "repeated_auth_failures",
@@ -32,7 +23,7 @@ export const rules: AbuseRule[] = [
       "Client hits many distinct routes rapidly — likely probing for endpoints.",
     threshold: 30,
     windowSeconds: 60,
-    blockDurationSeconds: 300,
+    blockDurationSeconds: 3600,
   },
   {
     name: "high_error_rate",

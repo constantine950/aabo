@@ -136,14 +136,6 @@ Open `http://localhost:5173`, enter your API key, and you're in.
 
 ---
 
-## Algorithms
-
-See [`docs/algorithms.md`](docs/algorithms.md) for a detailed breakdown of
-sliding window, token bucket, and fixed window — including Redis operations,
-tradeoffs, and when to use each.
-
----
-
 ## Simulate traffic
 
 ```bash
@@ -157,23 +149,3 @@ npm run simulate:attack
 Use a throwaway API key for attack simulations — the key will get blocked.
 
 ---
-
-## Project structure
-
-```
-src/
-├── config/         Redis and Postgres client setup
-├── middleware/      Auth, logger, rate limiter, abuse detector, error handler
-├── limiters/        Fixed window, sliding window, token bucket
-├── detection/       Abuse rules, engine, blocker, alerts
-├── routes/          API endpoint handlers
-├── models/          Postgres query helpers
-├── services/        Redis service, key service, metrics service
-├── types/           Shared TypeScript interfaces
-├── app.ts           Express app + middleware pipeline
-└── server.ts        Entry point
-dashboard/           React + Vite admin UI
-db/                  Schema, migrations, seed script
-docs/                PRD, architecture, algorithms
-scripts/             Traffic simulation tools
-```
